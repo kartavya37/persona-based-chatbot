@@ -1,3 +1,4 @@
+// CONFIG
 const API_URL_LOCAL = "http://localhost:3000";
 const API_URL_PROD = "https://persona-chatbot-backend-03h6.onrender.com";
 
@@ -11,6 +12,7 @@ const API_URL = isLocal ? API_URL_LOCAL : API_URL_PROD;
 const PERSONAS = {
   kshitij: {
     label: "Kshitij Mishra",
+    role: "Head of Instructors · Dean, SST",
     avatar: "K",
     suggestions: [
       "Explain consistent hashing",
@@ -21,6 +23,7 @@ const PERSONAS = {
   },
   anshuman: {
     label: "Anshuman Singh",
+    role: "Co-founder & CEO, Scaler",
     avatar: "An",
     suggestions: [
       "How do I grow faster as an engineer?",
@@ -31,6 +34,7 @@ const PERSONAS = {
   },
   abhimanyu: {
     label: "Abhimanyu Saxena",
+    role: "Co-founder, Scaler & InterviewBit",
     avatar: "Ab",
     suggestions: [
       "Should I focus on a degree or skills?",
@@ -43,25 +47,28 @@ const PERSONAS = {
 
 // STATE
 let activePerson = "kshitij";
-let history = []; // [{role: 'user'|'assistant', content: string}]
+let history = [];
 let isSending = false;
 
 // DOM
 const $body = document.body;
 const $messages = document.getElementById("messages");
 const $emptyState = document.getElementById("empty-state");
-const $emptyAvatar = document.getElementById("empty-avatar");
-const $emptyTitle = document.getElementById("empty-title");
+const $emptyHint = document.getElementById("empty-hint");
 const $suggestions = document.getElementById("suggestions");
 const $form = document.getElementById("form");
 const $query = document.getElementById("query");
 const $send = document.getElementById("send");
 const $clear = document.getElementById("clear");
 const $activeLabel = document.getElementById("active-label");
+const $activeRole = document.getElementById("active-role");
+const $topAvatar = document.getElementById("top-avatar");
 const $personaButtons = document.querySelectorAll(".persona");
+const $sidebar = document.querySelector(".sidebar");
+const $sidebarToggle = document.getElementById("sidebar-toggle");
 
 // INIT
-renderEmptyState();
+renderActivePerson();
 renderSuggestions();
 updateClearButton();
 
@@ -69,8 +76,12 @@ updateClearButton();
 $personaButtons.forEach((btn) => {
   btn.addEventListener("click", () => {
     const next = btn.dataset.person;
-    if (!next || next === activePerson) return;
+    if (!next || next === activePerson) {
+      closeSidebar();
+      return;
+    }
     setActivePerson(next);
+    closeSidebar();
   });
 });
 
@@ -83,19 +94,20 @@ function setActivePerson(key) {
     b.setAttribute("aria-pressed", b.dataset.person === key ? "true" : "false");
   });
 
-  $activeLabel.textContent = PERSONAS[key].label;
+  renderActivePerson();
   $messages.innerHTML = "";
   $messages.appendChild($emptyState);
-  renderEmptyState();
   renderSuggestions();
   updateClearButton();
   $query.focus();
 }
 
-function renderEmptyState() {
+function renderActivePerson() {
   const p = PERSONAS[activePerson];
-  $emptyAvatar.textContent = p.avatar;
-  $emptyTitle.textContent = `Start a conversation with ${p.label}`;
+  $activeLabel.textContent = p.label;
+  $activeRole.textContent = p.role;
+  $topAvatar.textContent = p.avatar;
+  $emptyHint.textContent = `Or pick one to see how ${p.label.split(" ")[0]} thinks:`;
 }
 
 function renderSuggestions() {
@@ -114,6 +126,24 @@ function renderSuggestions() {
   });
 }
 
+// SIDEBAR (mobile)
+function openSidebar() {
+  $sidebar.classList.add("open");
+}
+function closeSidebar() {
+  $sidebar.classList.remove("open");
+}
+$sidebarToggle?.addEventListener("click", () => {
+  if ($sidebar.classList.contains("open")) closeSidebar();
+  else openSidebar();
+});
+// click outside to close
+document.addEventListener("click", (e) => {
+  if (!$sidebar.classList.contains("open")) return;
+  if ($sidebar.contains(e.target) || $sidebarToggle.contains(e.target)) return;
+  closeSidebar();
+});
+
 // MESSAGE RENDERING
 function appendMessage(role, text, opts = {}) {
   if ($emptyState.parentElement === $messages) {
@@ -127,7 +157,16 @@ function appendMessage(role, text, opts = {}) {
 
   const avatar = document.createElement("span");
   avatar.className = "msg-avatar";
-  avatar.textContent = role === "user" ? "You" : PERSONAS[activePerson].avatar;
+  avatar.textContent =
+    role === "user" ? "Y" : PERSONAS[activePerson].avatar;
+
+  const body = document.createElement("div");
+  body.className = "msg-body";
+
+  const name = document.createElement("span");
+  name.className = "msg-name";
+  name.textContent =
+    role === "user" ? "You" : PERSONAS[activePerson].label;
 
   const bubble = document.createElement("div");
   bubble.className = "msg-bubble";
@@ -137,8 +176,11 @@ function appendMessage(role, text, opts = {}) {
     bubble.textContent = text;
   }
 
+  body.appendChild(name);
+  body.appendChild(bubble);
+
   wrap.appendChild(avatar);
-  wrap.appendChild(bubble);
+  wrap.appendChild(body);
   $messages.appendChild(wrap);
   scrollToBottom();
   return wrap;
@@ -153,12 +195,22 @@ function showTypingIndicator() {
   avatar.className = "msg-avatar";
   avatar.textContent = PERSONAS[activePerson].avatar;
 
+  const body = document.createElement("div");
+  body.className = "msg-body";
+
+  const name = document.createElement("span");
+  name.className = "msg-name";
+  name.textContent = PERSONAS[activePerson].label;
+
   const bubble = document.createElement("div");
   bubble.className = "msg-bubble";
   bubble.innerHTML = `<div class="typing"><span></span><span></span><span></span></div>`;
 
+  body.appendChild(name);
+  body.appendChild(bubble);
+
   wrap.appendChild(avatar);
-  wrap.appendChild(bubble);
+  wrap.appendChild(body);
   $messages.appendChild(wrap);
   scrollToBottom();
   return wrap;
@@ -198,7 +250,7 @@ async function submitMessage() {
       body: JSON.stringify({
         person: activePerson,
         message,
-        history: history.slice(0, -1), // exclude the just-pushed user msg (already sent as `message`)
+        history: history.slice(0, -1),
       }),
     });
 
@@ -230,7 +282,6 @@ $form.addEventListener("submit", (e) => {
   submitMessage();
 });
 
-// Enter to send, Shift+Enter for newline
 $query.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
     e.preventDefault();
@@ -241,18 +292,17 @@ $query.addEventListener("keydown", (e) => {
 // AUTORESIZE TEXTAREA
 function autoresize() {
   $query.style.height = "auto";
-  const next = Math.min($query.scrollHeight, 160);
+  const next = Math.min($query.scrollHeight, 180);
   $query.style.height = next + "px";
 }
 $query.addEventListener("input", autoresize);
 
-// CLEAR CONVERSATION
+// CLEAR
 $clear.addEventListener("click", () => {
   if (history.length === 0) return;
   history = [];
   $messages.innerHTML = "";
   $messages.appendChild($emptyState);
-  renderEmptyState();
   renderSuggestions();
   updateClearButton();
   $query.focus();

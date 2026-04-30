@@ -2,14 +2,15 @@
 
 Have a real conversation with three Scaler personalities — **Kshitij Mishra**, **Anshuman Singh**, and **Abhimanyu Saxena**. Each persona has its own carefully researched system prompt, voice, and few-shot examples, so the bot genuinely sounds like the person you picked.
 
-> **Live demo:** _add your deployed URL here once deployed_
+> **Live demo:** <https://harmonious-cajeta-76802c.netlify.app>
 
 ## Screenshots
 
-> _Add screenshots in `docs/` and reference them here_
->
-> ![Home / persona switcher](docs/screenshot-home.png)
-> ![Conversation example — Kshitij](docs/screenshot-kshitij.png)
+**Home — sidebar with persona switcher and quick-start chips**
+![Home / persona switcher](docs/screenshot-home.png)
+
+**Conversation — Kshitij explaining a concept Socratically**
+![Conversation example — Kshitij](docs/screenshot-kshitij.png)
 
 ## Stack
 
