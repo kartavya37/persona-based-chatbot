@@ -1,5 +1,5 @@
 const API_URL_LOCAL = "http://localhost:3000";
-const API_URL_PROD = "https://your-backend-url.example.com";
+const API_URL_PROD = "https://persona-chatbot-backend-03h6.onrender.com";
 
 const isLocal =
   location.hostname === "localhost" ||
